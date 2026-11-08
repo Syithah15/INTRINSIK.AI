@@ -31,5 +31,5 @@ Perguruan Tinggi: Universitas Halu Oleo
 
 1. **Clone repositori ini:**
    ```bash
-   git clone https://github.com/username-kamu/IntrinsikAI.git
+   git clone https://github.com/Syithah15/INTRINSIK.AI.git
    cd IntrinsikAI
