@@ -1,0 +1,37 @@
+# 1. Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# 2. File Rahasia (WAJIB!)
+.streamlit/secrets.toml
+.env
+credentials.json
+secrets.json
+*.key
+*.pem
+
+# 3. File Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# 4. File IDE (PyCharm/VS Code)
+.idea/
+.vscode/
+*.swp
+
+# 5. File Sistem Operasi
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 6. File Log dan Cache
+*.log
+logs/
+.cache/
