@@ -5,70 +5,28 @@ from ai_engine import ekstrak_data_pdf
 from calculator import hitung_valuasi
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN & CUSTOM CSS (TAMPILAN BARU)
+# 1. KONFIGURASI HALAMAN & CUSTOM CSS
 # ==========================================
 st.set_page_config(page_title="INTRINSIK.AI", page_icon="📈", layout="wide")
 
-# Injeksi CSS untuk tampilan modern
 st.markdown("""
     <style>
-    /* Mengubah font utama */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     
-    /* Container untuk Logo dan Judul */
-    .header-container {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 5px;
-    }
+    .header-container { display: flex; align-items: center; gap: 20px; margin-bottom: 5px; }
+    .logo-icon { font-size: 50px; line-height: 1; }
     
-    /* Emoji Ikon */
-    .logo-icon {
-        font-size: 50px;
-        line-height: 1;
-    }
-    
-    /* Judul Utama dengan Gradasi */
     .main-title { 
-        font-size: 50px; 
-        font-weight: 800; 
+        font-size: 50px; font-weight: 800; 
         background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 50%, #60A5FA 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        color: transparent;
-        margin: 0;
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text; color: transparent; margin: 0;
     }
-    
-    /* Sub-judul */
-    .sub-title { 
-        font-size: 18px; 
-        color: #9CA3AF; 
-        margin-bottom: 30px;
-        margin-top: 5px;
-    }
-    
-    /* Kotak Card untuk Hasil Analisis */
-    .verdict-card {
-        padding: 25px;
-        border-radius: 15px;
-        text-align: center;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .verdict-green { background-color: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; }
-    .verdict-red { background-color: rgba(239, 68, 68, 0.15); border: 1px solid #EF4444; }
-    .verdict-title { font-size: 16px; font-weight: 600; color: #D1D5DB; text-transform: uppercase; letter-spacing: 1px;}
-    .verdict-value { font-size: 40px; font-weight: 800; margin: 10px 0; }
-    .verdict-green .verdict-value { color: #10B981; }
-    .verdict-red .verdict-value { color: #EF4444; }
-    .verdict-desc { font-size: 16px; color: #E5E7EB; }
+    .sub-title { font-size: 18px; color: #9CA3AF; margin-bottom: 30px; margin-top: 5px; }
     </style>
 """, unsafe_allow_html=True)
 
-# Tampilan Header (Emoji dan Teks dipisah agar emoji tidak berubah warna)
 st.markdown("""
     <div class="header-container">
         <div class="logo-icon">📈</div>
@@ -76,7 +34,6 @@ st.markdown("""
     </div>
     <div class="sub-title">Robo-Advisor Valuasi Fundamental & Analisis Investasi</div>
 """, unsafe_allow_html=True)
-
 
 # ==========================================
 # 2. INISIALISASI SESSION STATE
@@ -91,7 +48,7 @@ if 'hitung_selesai' not in st.session_state:
 # ==========================================
 with st.sidebar:
     st.markdown("### 📥 Input Data")
-    ticker = st.text_input("Kode Saham (Manual)", value="ICBP", help="Masukkan kode saham 4 huruf")
+    ticker = st.text_input("Kode Saham (Manual)", value="ICBP")
     harga_pasar = st.number_input("Harga Saham Pasar (Rp)", min_value=100, value=10000, step=100)
     
     st.divider()
@@ -131,8 +88,6 @@ if st.session_state['analisis_selesai']:
     data_keuangan = st.session_state['data_keuangan']
     
     st.markdown("### 🔍 Verifikasi Data Ekstraksi AI")
-    
-    # Tampilkan info periode dalam bentuk kotak sukses
     st.success(f"**Periode Laporan Terdeteksi AI:** {data_keuangan.get('periode_laporan', 'Tidak diketahui')}")
     
     col_gambar, col_form = st.columns([1, 1], gap="large")
@@ -142,15 +97,21 @@ if st.session_state['analisis_selesai']:
         with st.container(border=True):
             st.markdown("#### 📄 Pratinjau Halaman PDF")
             
+            # DROPDOWN DIPERBARUI: Menambahkan Pendapatan dan Liabilitas
             metrik_pilihan = st.selectbox(
                 "Pilih data untuk melihat sumber halamannya:",
-                ["Laba Bersih", "Total Ekuitas", "Arus Kas (CFO/CFI/CFF)", "Jumlah Saham"]
+                ["Laba Bersih", "Total Ekuitas", "Total Pendapatan", "Total Liabilitas", "Arus Kas (CFO/CFI/CFF)", "Jumlah Saham"]
             )
             
+            # LOGIKA PEMILIHAN HALAMAN DIPERBARUI
             if metrik_pilihan == "Laba Bersih":
                 hal_target = data_keuangan.get('hal_laba', 1)
             elif metrik_pilihan == "Total Ekuitas":
                 hal_target = data_keuangan.get('hal_ekuitas', 1)
+            elif metrik_pilihan == "Total Pendapatan":
+                hal_target = data_keuangan.get('hal_pendapatan', 1)
+            elif metrik_pilihan == "Total Liabilitas":
+                hal_target = data_keuangan.get('hal_liabilitas', 1)
             elif metrik_pilihan == "Arus Kas (CFO/CFI/CFF)":
                 hal_target = data_keuangan.get('hal_arus_kas', 1)
             else:
@@ -174,6 +135,8 @@ if st.session_state['analisis_selesai']:
             with st.form("form_hitl"):
                 laba_bersih = st.number_input("Laba Bersih (Juta Rp)", value=int(data_keuangan['laba_bersih_juta']))
                 ekuitas = st.number_input("Total Ekuitas (Juta Rp)", value=int(data_keuangan['total_ekuitas_juta']))
+                pendapatan = st.number_input("Total Pendapatan (Juta Rp)", value=int(data_keuangan.get('total_pendapatan_juta', 0)))
+                liabilitas = st.number_input("Total Liabilitas (Juta Rp)", value=int(data_keuangan.get('total_liabilitas_juta', 0)))
                 net_cfo = st.number_input("Net CFO (Juta Rp)", value=int(data_keuangan['net_cfo_juta']))
                 net_cfi = st.number_input("Net CFI (Juta Rp)", value=int(data_keuangan['net_cfi_juta']))
                 net_cff = st.number_input("Net CFF (Juta Rp)", value=int(data_keuangan['net_cff_juta']))
@@ -184,69 +147,113 @@ if st.session_state['analisis_selesai']:
     if submit_hitl:
         data_final = {
             "laba_bersih_juta": laba_bersih, "total_ekuitas_juta": ekuitas,
-            "net_cfo_juta": net_cfo, "net_cfi_juta": net_cfi, "net_cff_juta": net_cff, "jumlah_saham": saham
+            "total_pendapatan_juta": pendapatan, "total_liabilitas_juta": liabilitas,
+            "net_cfo_juta": net_cfo, "net_cfi_juta": net_cfi, "net_cff_juta": net_cff, 
+            "jumlah_saham": saham,
+            "total_kas_juta": data_keuangan.get('total_kas_juta', 0),
+            "laba_ditahan_juta": data_keuangan.get('laba_ditahan_juta', 0)
         }
         st.session_state['hasil'] = hitung_valuasi(data_final, harga_pasar)
         st.session_state['hitung_selesai'] = True
 
 # ==========================================
-# 6. DASHBOARD HASIL AKHIR (TAMPILAN CARD MODERN)
+# 6. DASHBOARD HASIL AKHIR (4 OUTPUT UTAMA)
 # ==========================================
 if st.session_state['hitung_selesai']:
     hasil = st.session_state['hasil']
     data_keuangan = st.session_state['data_keuangan']
     
     st.divider()
-    st.markdown(f"### 📊 Hasil Analisis: {ticker} ({data_keuangan.get('periode_laporan', '')})")
+    st.markdown("## 📋 Laporan Hasil Analisis Fundamental")
     
-    # Cek Status Valuasi
-    is_undervalued = harga_pasar < hasil['nilai_intrinsik']
+    # --- BAGIAN 1: INFORMASI PERUSAHAAN ---
+    st.markdown("### 1. Informasi Perusahaan")
+    info_data = {
+        "Keterangan": ["Nama Perusahaan", "Kode Saham", "Periode Laporan", "Harga Saham Terakhir", "Jumlah Saham Beredar", "Market Cap (Rp)"],
+        "Nilai": [
+            data_keuangan.get('nama_perusahaan', '-'), ticker, data_keuangan.get('periode_laporan', '-'),
+            f"Rp {harga_pasar:,.0f}", f"{int(data_keuangan['jumlah_saham']):,}", f"Rp {hasil['market_cap']:,.0f}"
+        ]
+    }
+    st.table(pd.DataFrame(info_data))
     
-    # HTML Card untuk Verdict
-    if is_undervalued:
-        card_class = "verdict-green"
-        status_text = "UNDERVALUED (MURAH)"
-        desc_text = f"Potensi Keuntungan (Upside): +{hasil['mos']:.2f}%"
-    else:
-        card_class = "verdict-red"
-        status_text = "OVERVALUED (MAHAL)"
-        desc_text = f"Risiko Penurunan (Downside): {hasil['mos']:.2f}%"
-        
+    # --- BAGIAN 2: VALUASI RELATIF ---
+    st.markdown("### 2. Valuasi Relatif")
+    relatif_data = {
+        "Metrik / Rasio": ["EPS (Earnings per Share)", "PER (Price to Earnings)", "BVPS (Book Value per Share)", "PBV (Price to Book)", "PSR (Price to Sales)", "CPS (Cash per Share)", "PCS (Price to Cash)", "REPS (Retained Earning per Share)", "PRER (Price to REPS)"],
+        "Nilai": [
+            f"Rp {hasil['eps']:,.2f}", f"{hasil['per']:,.2f} x", 
+            f"Rp {hasil['bvps']:,.2f}", f"{hasil['pbv']:,.2f} x", 
+            f"{hasil['psr']:,.2f} x", f"Rp {hasil['cps']:,.2f}", f"{hasil['pcs']:,.2f} x", 
+            f"Rp {hasil['reps']:,.2f}", f"{hasil['prer']:,.2f} x"
+        ],
+        "Keterangan (Status)": [
+            "🟢 Laba Positif" if hasil['eps'] > 0 else "🔴 Laba Negatif",
+            "🟢 Murah (< 10x)" if hasil['per'] < 10 else ("🟡 Wajar (10x-20x)" if hasil['per'] <= 20 else "🔴 Mahal (> 20x)"),
+            "🟢 Di atas Harga Pasar" if hasil['bvps'] > harga_pasar else "🟡 Di bawah Harga Pasar",
+            "🟢 Murah (< 1.0x)" if hasil['pbv'] < 1.0 else ("🟡 Wajar (1.0x-2.5x)" if hasil['pbv'] <= 2.5 else "🔴 Mahal (> 2.5x)"),
+            "🟢 Murah (< 1.5x)" if hasil['psr'] < 1.5 else ("🟡 Wajar (1.5x-3.0x)" if hasil['psr'] <= 3.0 else "🔴 Mahal (> 3.0x)"),
+            "🟢 Kas Kuat (> 10% Harga)" if hasil['cps'] > (harga_pasar * 0.1) else "🟡 Kas Terbatas",
+            "🟢 Murah (< 5x)" if hasil['pcs'] < 5 else ("🟡 Wajar (5x-15x)" if hasil['pcs'] <= 15 else "🔴 Mahal (> 15x)"),
+            "🟢 Laba Ditahan Positif" if hasil['reps'] > 0 else "🔴 Laba Ditahan Negatif",
+            "🟢 Murah (< 3.0x)" if hasil['prer'] < 3.0 else ("🟡 Wajar (3.0x-8.0x)" if hasil['prer'] <= 8.0 else "🔴 Mahal (> 8.0x)")
+        ]
+    }
+    st.table(pd.DataFrame(relatif_data))
+
+    # --- BAGIAN 3: VALUASI ABSOLUT (DCF) ---
+    st.markdown("### 3. Valuasi Absolut (Discounted Cash Flow)")
+    st.write("**Asumsi:** Discount Rate = 11% | Perpetual Growth Rate = 3% | Proyeksi = 10 Tahun")
+    
+    df_dcf = pd.DataFrame({
+        "Tahun Ke-": range(1, 11),
+        "Laba Bersih (Juta Rp)": [f"{x:,.2f}" for x in hasil['projected_income']],
+        "Discounted (Juta Rp)": [f"{x:,.2f}" for x in hasil['discounted_income']]
+    })
+    st.dataframe(df_dcf, use_container_width=True, hide_index=True)
+    
     st.markdown(f"""
-        <div class="verdict-card {card_class}">
-            <div class="verdict-title">Harga Wajar (Nilai Intrinsik DCF)</div>
-            <div class="verdict-value">Rp {hasil['nilai_intrinsik']:,.2f}</div>
-            <div class="verdict-desc">
-                Harga Pasar Saat Ini: <b>Rp {harga_pasar:,.0f}</b> <br>
-                Status: <b>{status_text}</b> | {desc_text}
-            </div>
-        </div>
+    <table style="width:100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="border-bottom: 1px solid #555;"><td style="padding: 8px; font-weight: bold;">Terminal Value (Juta Rp)</td><td style="padding: 8px; text-align: right;">Rp {hasil['terminal_value']:,.2f}</td></tr>
+        <tr style="border-bottom: 1px solid #555;"><td style="padding: 8px; font-weight: bold;">Terminal Value Discounted</td><td style="padding: 8px; text-align: right;">Rp {hasil['discounted_tv']:,.2f}</td></tr>
+        <tr style="border-bottom: 1px solid #555;"><td style="padding: 8px; font-weight: bold;">Total Discounted Laba Bersih</td><td style="padding: 8px; text-align: right;">Rp {hasil['total_pv']:,.2f}</td></tr>
+        <tr style="border-top: 2px solid #fff; border-bottom: 2px solid #fff;">
+            <td style="padding: 8px; font-weight: bold; font-size: 18px;">Total Valuasi (Equity Value)</td>
+            <td style="padding: 8px; text-align: right; font-weight: bold; font-size: 18px;">Rp {hasil['total_valuasi_juta']:,.2f} Juta</td>
+        </tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Jumlah Saham Beredar</td><td style="padding: 8px; text-align: right;">{int(data_keuangan['jumlah_saham']):,}</td></tr>
+        <tr style="background-color: #1f2937;">
+            <td style="padding: 12px; font-weight: bold; font-size: 22px; color: #10B981;">NILAI INTRINSIK PER LEMBAR</td>
+            <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 22px; color: #10B981;">Rp {hasil['nilai_intrinsik']:,.2f}</td>
+        </tr>
+    </table>
     """, unsafe_allow_html=True)
+
+    is_undervalued = harga_pasar < hasil['nilai_intrinsik']
+    if is_undervalued:
+        st.success(f"**Verdict: UNDERVALUED (MURAH)**. Harga pasar saat ini (Rp {harga_pasar:,.0f}) berada di bawah nilai intrinsik. Potensi Upside: **+{hasil['mos']:.2f}%**")
+    else:
+        st.error(f"**Verdict: OVERVALUED (MAHAL)**. Harga pasar saat ini (Rp {harga_pasar:,.0f}) berada di atas nilai intrinsik. Risiko Downside: **{hasil['mos']:.2f}%**")
+
+    # --- BAGIAN 4: KESEHATAN PERUSAHAAN ---
+    st.markdown("### 4. Kesehatan Perusahaan (Screening)")
+    cfo_ok = data_keuangan['net_cfo_juta'] > 0
+    cfi_ok = data_keuangan['net_cfi_juta'] < 0
+    cff_ok = data_keuangan['net_cff_juta'] < 0
     
-    # Tabs Detail
-    tab1, tab2, tab3 = st.tabs(["📑 Rasio Relatif", "📈 Proyeksi DCF", "🩺 Kesehatan"])
-    
-    with tab1:
-        df_rasio = pd.DataFrame({
-            "Metrik": ["Earnings Per Share (EPS)", "Book Value Per Share (BVPS)", "Price to Earnings (PER)", "Price to Book Value (PBV)"],
-            "Nilai": [f"Rp {hasil['eps']:,.2f}", f"Rp {hasil['bvps']:,.2f}", f"{hasil['per']:,.2f} x", f"{hasil['pbv']:,.2f} x"]
-        })
-        st.dataframe(df_rasio, use_container_width=True, hide_index=True)
-        
-    with tab2:
-        df_dcf = pd.DataFrame({
-            "Tahun Ke-": range(1, 11),
-            "Proyeksi Laba (Juta Rp)": [f"{x:,.2f}" for x in hasil['projected_income']],
-            "Discounted (Juta Rp)": [f"{x:,.2f}" for x in hasil['discounted_income']]
-        })
-        st.dataframe(df_dcf, use_container_width=True, hide_index=True)
-        
-        col_tv1, col_tv2 = st.columns(2)
-        col_tv1.info(f"**Terminal Value:**\nRp {hasil['terminal_value']:,.2f} Juta")
-        col_tv2.success(f"**Total Valuasi (Equity Value):**\nRp {hasil['total_valuasi_juta']:,.2f} Juta")
-        
-    with tab3:
-        if hasil['is_sehat']:
-            st.success("✅ Status: **PERUSAHAAN SEHAT** (Arus kas operasi positif, sedang ekspansi aset, dan mampu membayar kewajiban).")
-        else:
-            st.warning("⚠️ Status: **PERLU WASPADA** (Cek kembali arus kas perusahaan. Bisa jadi ada indikasi masalah keuangan).")
+    sehat_data = {
+        "Indikator": ["Net CFO (Arus Kas Operasi)", "Net CFI (Arus Kas Investasi)", "Net CFF (Arus Kas Pendanaan)", "ROE (Return on Equity)", "DER (Debt to Equity)", "NPM (Net Profit Margin)"],
+        "Nilai": [
+            f"Rp {data_keuangan['net_cfo_juta']:,.0f} Juta", f"Rp {data_keuangan['net_cfi_juta']:,.0f} Juta", f"Rp {data_keuangan['net_cff_juta']:,.0f} Juta",
+            f"{hasil['roe']:.2f} %", f"{hasil['der']:.2f} x", f"{hasil['npm']:.2f} %"
+        ],
+        "Keterangan": [
+            "🟢 Sehat (Arus kas operasi positif)" if cfo_ok else "🔴 Waspada (Arus kas operasi negatif)",
+            "🟢 Sehat (Ekspansi aset)" if cfi_ok else "🟡 Waspada (Divestasi/Masalah aset)",
+            "🟢 Sehat (Bayar utang/dividen)" if cff_ok else "🟡 Waspada (Cari utang baru)",
+            "🟢 Sangat Bagus (>15%)" if hasil['roe'] > 15 else ("🟡 Wajar (5%-15%)" if hasil['roe'] >= 5 else "🔴 Kurang (<5%)"),
+            "🟢 Aman (<1.0x)" if hasil['der'] < 1.0 else ("🟡 Wajar (1.0x-2.0x)" if hasil['der'] <= 2.0 else "🔴 Berisiko (>2.0x)"),
+            "🟢 Sangat Bagus (>15%)" if hasil['npm'] > 15 else ("🟡 Wajar (5%-15%)" if hasil['npm'] >= 5 else "🔴 Kurang (<5%)")
+        ]
+    }
+    st.table(pd.DataFrame(sehat_data))

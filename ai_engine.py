@@ -8,51 +8,57 @@ MODEL_CANDIDATES = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"]
 
 def ekstrak_data_pdf(file_pdf, is_demo=False):
     
-    # --- JIKA USER MENCENTANG DEMO MODE ---
     if is_demo:
         return {
             "status": "success",
             "data": {
                 "nama_perusahaan": "PT Indofood CBP Sukses Makmur Tbk",
-                "periode_laporan": "Q2 2026 (30 Juni 2026)", 
-                "laba_bersih_juta": 3702564, # <-- Menggunakan Laba Entitas Induk
+                "periode_laporan": "Q2 2026 (30 Juni 2026)",
+                "laba_bersih_juta": 3702564,
                 "total_ekuitas_juta": 75272636,
+                "total_pendapatan_juta": 41863388,
+                "total_liabilitas_juta": 68713288,
                 "net_cfo_juta": 5672816,
                 "net_cfi_juta": -1312002,
                 "net_cff_juta": -974863,
                 "jumlah_saham": 11661908000,
-                "hal_laba": 8, # Halaman 8 (tempat angka entitas induk berada)
+                "total_kas_juta": 33537992,          
+                "laba_ditahan_juta": 45794427,       
+                "hal_laba": 8, 
                 "hal_ekuitas": 6,
+                "hal_pendapatan": 7,    # Data Baru (Halaman 7)
+                "hal_liabilitas": 5,    # Data Baru (Halaman 5)
                 "hal_arus_kas": 10,
                 "hal_saham": 6
             }
         }
 
-    # --- JIKA USER TIDAK MENCENTANG (MODE ASLI) ---
     pdf_bytes = file_pdf.read()
-    
-    # PROMPT DIPERBARUI: Menambahkan aturan ketat untuk Laba Entitas Induk
     prompt = """
     Anda adalah analis keuangan senior. Periksa dokumen yang dilampirkan.
     1. JIKA BUKAN laporan keuangan, kembalikan: {"status": "invalid", "pesan": "Dokumen tidak valid."}
     2. JIKA VALID, ekstrak data berikut (dalam Jutaan Rupiah):
        - nama_perusahaan
-       - periode_laporan (Ekstrak tanggal laporan, lalu tentukan kuartalnya. Format wajib: "Q[1/2/3/4] [Tahun] (Tanggal Lengkap)". Contoh: "Q2 2026 (30 Juni 2026)")
-       
-       - laba_bersih_juta: (PENTING! Cari baris "Laba yang dapat diatribusikan kepada pemilik entitas induk" / "Income for the period attributable to equity holders of the parent entity". JANGAN mengambil dari baris "LABA PERIODE BERJALAN" / "INCOME FOR THE PERIOD").
-       
+       - periode_laporan (Format wajib: "Q[1/2/3/4] [Tahun] (Tanggal Lengkap)". Contoh: "Q2 2026 (30 Juni 2026)")
+       - laba_bersih_juta (Gunakan angka "Laba yang diatribusikan kepada pemilik entitas induk")
        - total_ekuitas_juta
+       - total_pendapatan_juta (Cari baris "Penjualan Neto" atau "Pendapatan")
+       - total_liabilitas_juta (Cari baris "Total Liabilitas")
+       - total_kas_juta (Cari baris "Kas dan setara kas")
+       - laba_ditahan_juta (Cari baris "Saldo laba" atau "Retained earnings")
        - net_cfo_juta
        - net_cfi_juta
        - net_cff_juta
        - jumlah_saham
-       - hal_laba (nomor halaman tempat "Laba Entitas Induk" berada)
+       - hal_laba (nomor halaman tempat Laba Entitas Induk berada)
        - hal_ekuitas (nomor halaman tempat Ekuitas berada)
+       - hal_pendapatan (nomor halaman tempat Pendapatan berada)
+       - hal_liabilitas (nomor halaman tempat Total Liabilitas berada)
        - hal_arus_kas (nomor halaman tempat Arus Kas berada)
        - hal_saham (nomor halaman tempat Jumlah Saham berada)
        
     Kembalikan HANYA format JSON ini:
-    {"status": "success", "data": {"nama_perusahaan": "...", "periode_laporan": "Q2 2026 (30 Juni 2026)", "laba_bersih_juta": 1234, "total_ekuitas_juta": 5678, "net_cfo_juta": 901, "net_cfi_juta": -234, "net_cff_juta": -567, "jumlah_saham": 1000000, "hal_laba": 8, "hal_ekuitas": 6, "hal_arus_kas": 10, "hal_saham": 6}}
+    {"status": "success", "data": {"nama_perusahaan": "...", "periode_laporan": "Q2 2026 (30 Juni 2026)", "laba_bersih_juta": 1234, "total_ekuitas_juta": 5678, "total_pendapatan_juta": 999, "total_liabilitas_juta": 888, "total_kas_juta": 111, "laba_ditahan_juta": 222, "net_cfo_juta": 901, "net_cfi_juta": -234, "net_cff_juta": -567, "jumlah_saham": 1000000, "hal_laba": 8, "hal_ekuitas": 6, "hal_pendapatan": 7, "hal_liabilitas": 5, "hal_arus_kas": 10, "hal_saham": 6}}
     """
     
     last_error = ""
