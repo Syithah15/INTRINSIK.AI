@@ -14,15 +14,14 @@ def ekstrak_data_pdf(file_pdf, is_demo=False):
             "status": "success",
             "data": {
                 "nama_perusahaan": "PT Indofood CBP Sukses Makmur Tbk",
-                "periode_laporan": "30 Juni 2026 (Q2 2026)",
-                "laba_bersih_juta": 4537446,
+                "periode_laporan": "Q2 2026 (30 Juni 2026)", 
+                "laba_bersih_juta": 3702564, # <-- Menggunakan Laba Entitas Induk
                 "total_ekuitas_juta": 75272636,
                 "net_cfo_juta": 5672816,
                 "net_cfi_juta": -1312002,
                 "net_cff_juta": -974863,
                 "jumlah_saham": 11661908000,
-                # AI mencatat halaman spesifik tiap metrik
-                "hal_laba": 7,
+                "hal_laba": 8, # Halaman 8 (tempat angka entitas induk berada)
                 "hal_ekuitas": 6,
                 "hal_arus_kas": 10,
                 "hal_saham": 6
@@ -31,25 +30,29 @@ def ekstrak_data_pdf(file_pdf, is_demo=False):
 
     # --- JIKA USER TIDAK MENCENTANG (MODE ASLI) ---
     pdf_bytes = file_pdf.read()
+    
+    # PROMPT DIPERBARUI: Menambahkan aturan ketat untuk Laba Entitas Induk
     prompt = """
     Anda adalah analis keuangan senior. Periksa dokumen yang dilampirkan.
     1. JIKA BUKAN laporan keuangan, kembalikan: {"status": "invalid", "pesan": "Dokumen tidak valid."}
     2. JIKA VALID, ekstrak data berikut (dalam Jutaan Rupiah):
        - nama_perusahaan
-       - periode_laporan (contoh format: "31 Desember 2025" atau "30 Juni 2026")
-       - laba_bersih_juta
+       - periode_laporan (Ekstrak tanggal laporan, lalu tentukan kuartalnya. Format wajib: "Q[1/2/3/4] [Tahun] (Tanggal Lengkap)". Contoh: "Q2 2026 (30 Juni 2026)")
+       
+       - laba_bersih_juta: (PENTING! Cari baris "Laba yang dapat diatribusikan kepada pemilik entitas induk" / "Income for the period attributable to equity holders of the parent entity". JANGAN mengambil dari baris "LABA PERIODE BERJALAN" / "INCOME FOR THE PERIOD").
+       
        - total_ekuitas_juta
        - net_cfo_juta
        - net_cfi_juta
        - net_cff_juta
        - jumlah_saham
-       - hal_laba (nomor halaman tempat Laba Bersih berada)
+       - hal_laba (nomor halaman tempat "Laba Entitas Induk" berada)
        - hal_ekuitas (nomor halaman tempat Ekuitas berada)
        - hal_arus_kas (nomor halaman tempat Arus Kas berada)
        - hal_saham (nomor halaman tempat Jumlah Saham berada)
        
     Kembalikan HANYA format JSON ini:
-    {"status": "success", "data": {"nama_perusahaan": "...", "periode_laporan": "...", "laba_bersih_juta": 1234, "total_ekuitas_juta": 5678, "net_cfo_juta": 901, "net_cfi_juta": -234, "net_cff_juta": -567, "jumlah_saham": 1000000, "hal_laba": 7, "hal_ekuitas": 6, "hal_arus_kas": 10, "hal_saham": 6}}
+    {"status": "success", "data": {"nama_perusahaan": "...", "periode_laporan": "Q2 2026 (30 Juni 2026)", "laba_bersih_juta": 1234, "total_ekuitas_juta": 5678, "net_cfo_juta": 901, "net_cfi_juta": -234, "net_cff_juta": -567, "jumlah_saham": 1000000, "hal_laba": 8, "hal_ekuitas": 6, "hal_arus_kas": 10, "hal_saham": 6}}
     """
     
     last_error = ""
