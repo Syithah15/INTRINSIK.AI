@@ -26,8 +26,8 @@ def ekstrak_data_pdf(file_pdf, is_demo=False):
                 "laba_ditahan_juta": 45794427,       
                 "hal_laba": 8, 
                 "hal_ekuitas": 6,
-                "hal_pendapatan": 7,    # Data Baru (Halaman 7)
-                "hal_liabilitas": 5,    # Data Baru (Halaman 5)
+                "hal_pendapatan": 7,    
+                "hal_liabilitas": 5,    
                 "hal_arus_kas": 10,
                 "hal_saham": 6
             }
@@ -37,25 +37,21 @@ def ekstrak_data_pdf(file_pdf, is_demo=False):
     prompt = """
     Anda adalah analis keuangan senior. Periksa dokumen yang dilampirkan.
     1. JIKA BUKAN laporan keuangan, kembalikan: {"status": "invalid", "pesan": "Dokumen tidak valid."}
-    2. JIKA VALID, ekstrak data berikut (dalam Jutaan Rupiah):
+    
+    2. JIKA VALID, ekstrak data berikut. PERHATIKAN SATUANNYA (Juta atau Miliar Rupiah):
        - nama_perusahaan
-       - periode_laporan (Format wajib: "Q[1/2/3/4] [Tahun] (Tanggal Lengkap)". Contoh: "Q2 2026 (30 Juni 2026)")
-       - laba_bersih_juta (Gunakan angka "Laba yang diatribusikan kepada pemilik entitas induk")
-       - total_ekuitas_juta
-       - total_pendapatan_juta (Cari baris "Penjualan Neto" atau "Pendapatan")
-       - total_liabilitas_juta (Cari baris "Total Liabilitas")
-       - total_kas_juta (Cari baris "Kas dan setara kas")
-       - laba_ditahan_juta (Cari baris "Saldo laba" atau "Retained earnings")
-       - net_cfo_juta
-       - net_cfi_juta
-       - net_cff_juta
-       - jumlah_saham
-       - hal_laba (nomor halaman tempat Laba Entitas Induk berada)
-       - hal_ekuitas (nomor halaman tempat Ekuitas berada)
-       - hal_pendapatan (nomor halaman tempat Pendapatan berada)
-       - hal_liabilitas (nomor halaman tempat Total Liabilitas berada)
-       - hal_arus_kas (nomor halaman tempat Arus Kas berada)
-       - hal_saham (nomor halaman tempat Jumlah Saham berada)
+       - periode_laporan (Format wajib: "Q[1/2/3/4] [Tahun] (Tanggal Lengkap)")
+       - laba_bersih_juta: (Cari "Laba periode berjalan yang dapat diatribusikan kepada Pemilik Entitas Induk". JANGAN ambil angka "Laba per Saham (EPS)". Jika laporan dalam MILIAR, kalikan dengan 1000 agar menjadi JUTA).
+       - total_ekuitas_juta (Jika laporan dalam MILIAR, kalikan dengan 1000).
+       - total_pendapatan_juta (Jika laporan dalam MILIAR, kalikan dengan 1000).
+       - total_liabilitas_juta (Jika laporan dalam MILIAR, kalikan dengan 1000).
+       - total_kas_juta (Jika laporan dalam MILIAR, kalikan dengan 1000).
+       - laba_ditahan_juta (Cari "Saldo laba" di bagian Ekuitas. Jika MILIAR, kalikan dengan 1000).
+       - net_cfo_juta (Jika laporan dalam MILIAR, kalikan dengan 1000).
+       - net_cfi_juta (Jika laporan dalam MILIAR, kalikan dengan 1000).
+       - net_cff_juta (Jika laporan dalam MILIAR, kalikan dengan 1000).
+       - jumlah_saham (Cari di Catatan Laporan Keuangan pada bagian "Modal Saham". Jika tidak ada, hitung dengan rumus: (Modal Saham / Nilai Nominal per Saham) - (Saham Diperoleh Kembali / Nilai Nominal). Angka ini dalam satuan Lembar Penuh).
+       - hal_laba, hal_ekuitas, hal_pendapatan, hal_liabilitas, hal_arus_kas, hal_saham (nomor halaman)
        
     Kembalikan HANYA format JSON ini:
     {"status": "success", "data": {"nama_perusahaan": "...", "periode_laporan": "Q2 2026 (30 Juni 2026)", "laba_bersih_juta": 1234, "total_ekuitas_juta": 5678, "total_pendapatan_juta": 999, "total_liabilitas_juta": 888, "total_kas_juta": 111, "laba_ditahan_juta": 222, "net_cfo_juta": 901, "net_cfi_juta": -234, "net_cff_juta": -567, "jumlah_saham": 1000000, "hal_laba": 8, "hal_ekuitas": 6, "hal_pendapatan": 7, "hal_liabilitas": 5, "hal_arus_kas": 10, "hal_saham": 6}}
